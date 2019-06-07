@@ -1,8 +1,8 @@
 # i-cyto.github.com
 
-A companion github repository for (http://impact-cyto.inserm.fr)[http://impact-cyto.inserm.fr]
+A companion github repository for [http://impact-cyto.inserm.fr](http://impact-cyto.inserm.fr)
 
-All repositories at (https://github.com/i-cyto)[https://github.com/i-cyto]
+All repositories at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 ## News
 
