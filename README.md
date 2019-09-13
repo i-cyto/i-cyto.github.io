@@ -18,6 +18,7 @@ devtools::install_github("i-cyto/cytofkit")
 BiocManager::install("uwot")
 devtools::install_github("i-cyto/cytofast")
 ```
+
 **2019-09-13 [cytofast](https://github.com/i-cyto/cytofast)**
   - import FCS from cytofkit
   - nice [heatmap](https://i-cyto.github.io/images/heatmap_cytofast.png) of combined markers and percentages
