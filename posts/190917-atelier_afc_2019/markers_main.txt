@@ -1,0 +1,31 @@
+# This line starts with a diese, so this is a comment
+# Here is a marker list for cytofkit
+# It allows a quick and reproducible definition of markers
+# You can type the name of this file in the marker selection
+# A header line must be specified
+Markers
+Ce142Di<142Ce_CD19>
+Nd145Di<145Nd_CD4>
+Nd146Di<146Nd_CD8>
+Sm149Di<149Sm_CD25>
+Eu151Di<151Eu_CD14>
+Sm154Di<154Sm_CD3>
+Tb159Di<159Tb_CCR7>
+Er167Di<167Er_CD27>
+Tm169Di<169Tm_CD45RA>
+Lu176Di<176Lu_CD56>
+Yb171Di<171Yb_CXCR5>
+Gd160Di<160Gd_CD28>
+Sm147Di<147Sm_CD95>
+Nd143Di<143Nd_CD127>
+# The following markers are comments
+# You can copy this text file and uncomment them to start a new analysis
+#Er168Di<168Er_Ki67>
+#Er170Di<170Er_CD122>
+#Gd155Di<155Gd_PD1>
+#Gd156Di<156Gd_CD32a>
+#Gd158Di<158Gd_p24>
+#Ho165Di<165Ho_Lag3>
+#Nd144Di<144Nd_CD38>
+#Sm152Di<152Sm_pAkt>
+#Y89Di<89Y_CD45>
