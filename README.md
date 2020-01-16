@@ -11,14 +11,13 @@ All repositories at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 **2019-09-13 [cytofkit](https://github.com/i-cyto/cytofkit)**
   - few updates to cytofkit, see [GUI screenshot](https://i-cyto.github.io/images/cytofkit_GUI_190913.png)
-  - tested on a fresh install of R 3.6.1 + Rtools 3.5 on Windows 7 64bits using the following commands to install packages:
+  - tested on a fresh install of R 3.6.1 (or 3.6.2) + Rtools 3.5 on Windows 7 64bits using the following commands to install packages. Please do copy/paste commands **line by line**. Whenever you get a message 'Update all/some/none? [a/s/n]:', answer 'n'. If you get a dialog box asking to install from source, answer either yes or no.
 ```
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install("flowCore")
+BiocManager::install("uwot")
 BiocManager::install("devtools")
 devtools::install_github("i-cyto/cytofkit")
-BiocManager::install("uwot")
 devtools::install_github("i-cyto/cytofast")
 ```
 
