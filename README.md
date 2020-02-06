@@ -6,7 +6,7 @@ All repositories at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 ## News
 
-**2020-02-07 [Analysis cytofkit-cytofast](posts/190917-atelier_afc_2019)**
+**2020-02-07 [Analysis cytofkit-cytofast](posts/200204-atelier_afc_2020)**
   - announcement [Atelier AFC 2020](https://afcytometrie.fr/jt-analyse-de-donnees-sophia-antipolis-fevrier-2020/)
   - for installation see command lines below
 
