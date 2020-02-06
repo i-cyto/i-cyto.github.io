@@ -6,7 +6,8 @@ All repositories at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 ## News
 
-**2020-02-07 [Atelier AFC 2020](https://afcytometrie.fr/jt-analyse-de-donnees-sophia-antipolis-fevrier-2020/)**
+**2020-02-07 [Analysis cytofkit-cytofast](posts/190917-atelier_afc_2019)**
+  - announcement [Atelier AFC 2020](https://afcytometrie.fr/jt-analyse-de-donnees-sophia-antipolis-fevrier-2020/)
   - for installation see command lines below
 
 **2019-09-17 [Atelier AFC 2019](posts/190917-atelier_afc_2019)**
@@ -21,9 +22,9 @@ All repositories at [https://github.com/i-cyto](https://github.com/i-cyto)
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install("flowCore")
 BiocManager::install("uwot")
-BiocManager::install("devtools")
-devtools::install_github("i-cyto/cytofkit")
-devtools::install_github("i-cyto/cytofast")
+BiocManager::install("remotes")
+BiocManager::install("i-cyto/cytofkit")
+BiocManager::install("i-cyto/cytofast")
 ```
 
 **2019-09-13 [cytofast](https://github.com/i-cyto/cytofast)**
