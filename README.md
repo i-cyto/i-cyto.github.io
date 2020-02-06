@@ -18,7 +18,7 @@ All repositories at [https://github.com/i-cyto](https://github.com/i-cyto)
   - tested on a fresh install of R 3.6.1 (and 3.6.2) + Rtools 3.5 on **Windows** 10 or 7 64bits using the following commands to install packages
     - Please do copy/paste commands **line by line**
     - Whenever you get a message 'Update all/some/none? [a/s/n]:', answer **n**
-    - If you get a dialog box asking to install from source, answer either **no**
+    - If you get a dialog box asking to install from source, answer **no**
 ```
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install("flowCore")
