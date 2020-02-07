@@ -1,0 +1,293 @@
+---
+title: "JT AFC 05/02/2020 - cytofkit / cytofast"
+author: "S Granjeaud - A Meghraoui"
+date: "05/02/2020"
+output:
+  html_document:
+    toc: true
+    fig_height: 9
+    fig_width: 10
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project definition
+
+We organize the data and the results
+
+```{r}
+fcs_dir = "c:/demo/200205-atelier/CLEAN_DATA"
+res_dir = "c:/demo/200205-atelier/CLEAN_DATA_results"
+marker_file = "ck_markers_main.txt"
+if (!dir.exists(res_dir)) dir.create(res_dir)
+```
+
+
+
+## FCS Overview
+
+
+```{r}
+library(flowCore)
+
+# read the FCS as a flowset, ie a group of compatible FCS
+fs = read.flowSet(path = fcs_dir, pattern = "*.fcs", transformation = FALSE, truncate_max_range = FALSE)
+
+# view the flowset
+fs
+
+# view annotations
+pData(fs)
+# here, none
+
+# view the cell counts
+fsApply(fs, nrow)
+
+# view a specific FCS
+ff = fs[[1]]  # extract 1st FCS as flowframe
+# view some keywords
+keyword(ff, "$CYT")  # cytometer
+keyword(ff, "$GUID")
+keyword(ff, "$FIL")  # file name
+keyword(ff, "$TOT")  # cell count
+keyword(ff, "$COM")  # comment
+# view all keywords
+kwd = keyword(ff)
+length(kwd)  # there are too many
+# filter out some keywords
+kwd_1 = kwd[!grepl("flowCore", names(kwd))]  # not flowcore
+kwd_2 = kwd_1[-grep("^\\$P", names(kwd_1))]  # not standard parameters
+#kwd_2  # display remaining keywords
+unlist(kwd_2)
+```
+
+
+## cytofkit analysis
+
+
+Run by hand
+
+```{r eval=FALSE}
+library(cytofkit)
+# Launch the Graphical User Interface for tuning the run
+cytofkit_GUI()
+# Note the path to the result file
+
+# Launch the Shiny interface to view and annotate the analysis
+cytofkitShinyAPP()
+```
+
+
+```{r eval=FALSE}
+# Launch the Shiny interface using a defined path
+analysis_file = "c:/demo/200205-atelier/CLEAN_DATA_results/run_5k/run_5k.RData"
+if (file.exists(analysis_file))
+  cytofkitShinyAPP(analysis_file)
+```
+
+
+Script version for tuning parameters
+
+```{r eval=FALSE, include=FALSE}
+library(cytofkit)
+if (!file.exists(file.path(fcs_dir, marker_file)))
+  stop("Cannot find marker file!")
+cytofkit(fcsFiles = fcs_dir, markers = marker_file, projectName = "run_5k", ifCompensation = FALSE, transformMethod = "arcsinh", mergeMethod = "fixed", fixedNum = 5000, dimReductionMethod = "tsne", clusterMethods =  c("FlowSOM", "Rphenograph"), visualizationMethods = c("pca", "tsne", "umap"), resultDir = file.path(res_dir, "run_5k"))
+analysis_file = file.path(res_dir, "run_5k", "run_5k.RData")
+if (file.exists(analysis_file))
+  cytofkitShinyAPP(analysis_file)
+```
+
+
+## Cytofast post-analysis
+
+
+Main configuration
+
+```{r}
+# Tell where the FCS files of cytofkit are
+analysis_fcs_dir = file.path(res_dir, "run_5k", "run_5k_analyzedFCS")
+stopifnot(dir.exists(analysis_fcs_dir))
+selected_clustering_method = "FlowSOM_clusterIDs"
+#selected_clustering_method = "Rphenograph_clusterIDs"
+```
+
+Read Cytofkit FCS export
+
+```{r readCytofkit}
+# Load libraries
+library(flowCore)
+library(cytofast)
+
+# Load cytofkit FCS files
+cfData = readCytofkitFCS(analysis_fcs_dir, clusterID = selected_clustering_method)
+# cfData = readCytofkitFCS("demo/cytofkit_demo_analyzedFCS", clusterID = "Rphenograph_clusterIDs")
+table(cfData@expr$clusterID)
+```
+
+Optionnally, do some channel cleaning
+
+```{r}
+# Remove unneeded channels
+keep <- colnames(cfData@expr)  # all
+keep <- keep[!grepl("^(Time|Event_length|Cell_length)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("^(Cisplatin)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("(_ADN1|_ADN2)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("^(NA\\.)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("^X\\d+", keep) | grepl("_", keep)]  # unannotated X channel
+cfData@expr <- cfData@expr[, keep]
+
+# Rename channels
+colnames(cfData@expr) <- gsub("(^X\\d+.+?_)", "", keep)  # remove metal tag
+colnames(cfData@expr) <- gsub("(\\.\\d+.$)", "", keep)  # remove metal tag
+
+# Manual ordering of channels
+first <- c("CD20", "CD19", "CD3", "CD4", "CD8", "TCRgd", "CD56", "CD16", "CD45RA", "CD95", "CD127")
+first <- intersect(first, colnames(cfData@expr))
+
+keep <- colnames(cfData@expr)  # all
+cfData@expr <- cfData@expr[, c(keep[1:2], first, setdiff(keep[-(1:2)], first))]
+```
+
+
+Read meta data that group FCS samples
+
+```{r}
+# To compute statistical tests, we need to define groups
+# Here are the un-annotated samples
+cfData@samples
+
+# Either we fill the annotation using an Excel template
+# the template consists in a first column of sample identifiers
+# and a second column called status
+meta <- data.frame(cfData@samples, status = "")
+# The template is written on disk
+if (!file.exists("meta.csv")) {
+  write.csv(meta, "meta.csv")
+}
+# Now you can annotate the template using Excel
+# and store it as CSV file keeping the original format
+
+# Either we fill meta data programmatically
+meta$status <- c(rep(c("D", "P"), each = 3))
+write.csv(meta, "meta.csv")
+
+# Fill the template using Excel or so
+
+# Import annotation
+if (file.exists("meta.csv")) {
+  meta <- read.csv("meta.csv", row.names = 1)
+}
+# meta <- meta[match(row.names(cfData@samples), meta[,"sampleID"]),] # match sampleID
+cfData@samples <- cbind.data.frame(cfData@samples, meta[, -1, drop = FALSE])
+cfData@samples
+```
+
+Transform expression values, in the same way you display marker intensity
+
+```{r}
+# Transform expression with asinh( x / 5 )
+cfData@expr[,-(1:2)] <- asinh(cfData@expr[,-(1:2)]/5)
+```
+
+Works with cell counts
+
+```{r}
+# Retrieve cell counts
+cfData <- cellCounts(cfData)
+head(cfData@counts)
+# View(cfData@counts)
+cytoHeatmaps(cfData, group="status", legend=TRUE)
+```
+
+Cell counts need to be transformed
+
+```{r}
+# Store raw counts
+cellCountRaw <- cfData@counts
+
+# Transform cell counts with log2( x + floor )
+cfData@counts <- log2(cfData@counts+10)
+# Center
+cfData@counts <- sweep(cfData@counts, 2, colMeans(cfData@counts), "-")
+round(head(cfData@counts))
+cytoHeatmaps(cfData, group="status", legend=TRUE)
+```
+
+Let's take status D as reference
+
+```{r}
+# Center to D
+cfData@counts <- sweep(cfData@counts, 2, colMeans(cfData@counts[cfData@samples$status == "D",]), "-")
+round(head(cfData@counts)*10)
+cytoHeatmaps(cfData, group="status", legend=TRUE)
+```
+
+Box plots
+
+```{r}
+# Detailed view of counts aka percentages
+cytoBoxplots(cfData, group = "status")
+```
+
+Functional marker histograms
+
+```{r, eval=FALSE}
+# Detailed of functional markers
+msiPlot(cfData, markers = c("CD8", "CD4"), byGroup='status')
+```
+
+Do some statistics
+
+```{r}
+# Add t.test
+cfData <- cytottest(cfData, group="status", adjustMethod = "fdr")
+head(cfData@results)
+
+# Add some columns
+# fold is a multiplicative coefficient applied to the reference
+# fold is negative to stand for 1/fold
+cfData@results <- within(cfData@results, {
+  diff <- mean_P - mean_D
+  fold <- sign(diff) * round(2^abs(diff), 2)
+  unselected <- abs(diff) < 0.5 | pvalue > 0.05
+  label <- clusters
+  label[unselected] <- NA
+  })
+```
+
+View the Volcano plot
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+set.seed(42)
+
+p <- ggplot(cfData@results, aes(diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(0.05, 1))) + geom_vline(xintercept = c(-0.5, 0 , 0.5)) + ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages")
+p + geom_text_repel(aes(label = label))
+
+```
+
+Alternate scale
+
+```{r}
+p <- ggplot(cfData@results, aes(2^diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(0.05, 1))) + geom_vline(xintercept = c(1/1.5, 1 , 1.5)) + ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages") + scale_x_continuous(trans = "log2")
+p + geom_text_repel(aes(label = label))
+```
+
+
+and the table of counts
+
+```{r}
+library(knitr)
+kable(
+  cbind(cfData@results[with(cfData@results, !unselected),], t(
+    cellCountRaw[,with(cfData@results, !unselected)]))[,-c(1:3,6:7)]
+)
+```
+
+
+
+
