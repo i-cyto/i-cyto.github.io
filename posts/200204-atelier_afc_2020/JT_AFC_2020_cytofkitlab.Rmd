@@ -1,0 +1,631 @@
+---
+title: "JT AFC 05/02/2020 - cytofkit / cytofast - v2"
+author: "S Granjeaud - A Meghraoui"
+date: "05/02/2020"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    collapsed: no
+    fig_height: 9
+    fig_width: 10
+vignette: >
+  %\VignetteEngine{knitr}
+  %\VignetteIndexEntry{Analysis Pipeline}
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Goals
+
+Here is a notebook to perform
+
+* a multi-parametric cytometry analysis using **cytofkitlab** (a fork of cytofkit)
+
+* a standard differential analysis of percentages using the **cytofast** framework
+
+
+The cytofkit analysis aims at clustering the cells and visualizing them in a two-dimensional map.
+This is similar to what you, experts of cytometry, are usually carrying out using standard or
+commercial software. Just imagine that the gating is automated by clustering approaches and that new
+axes resulting from dimension redcution techniques are presented on the classical bi-paramteric
+graph to help visualization. If you get those two points, you got the big picture of all staff here.
+
+
+The cytofast analysis aims at finding differences between groups of samples using their percentages
+of cells in each clusters. The percentages are extracted from the FCS files exported at the end of
+the cytofkit analysis. Some new channels have been added to those FCS in order to report clustering
+and dimensions reduction results.
+
+
+## Check installed packages
+
+As a reminder, install the required packages.
+
+```{r, eval=FALSE}
+# install devtools if not already done
+if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+# install Rphenograph if not already installed
+if (!requireNamespace("Rphenograph", quietly = TRUE))
+  devtools::install_github("i-cyto/Rphenograph")
+# install cytofkitlab
+devtools::install_github("i-cyto/cytofkitlab")
+# install cytofast
+if (!requireNamespace("cytofast", quietly = TRUE)) {
+  BiocManager::install("cytofast")
+}
+```
+
+You could check your installation by runnning the following chunk (ie set of commands).
+
+```{r}
+err <- FALSE
+for (pkg in c("cytofkitlab", "Rphenograph", "FlowSOM", "cytofast")) {
+  if (!suppressWarnings(requireNamespace(pkg, quietly = TRUE))) {
+    warning(pkg, " must be installed.")
+    err <- TRUE
+  }
+}
+if (!err) message("Your installation seems correct.")
+```
+
+
+# cytofkit(lab) analysis (Via Graphical User Interface)
+
+
+This part concerns the cytofkit analysis. This step is typically carried out using the graphical 
+interface. If you want to repeat the analysis by changing parameters or automate the analysis for
+a few experiments, you will be interested in learning a few R commands at the end of this document.
+
+
+## Computation first
+
+Typical way to carry the analysis relies on R/Rstudio in which you enter the follwing commands.
+
+```{r eval=FALSE}
+library(cytofkitlab)
+# Launch the Graphical User Interface for tuning the run
+cytofkit_GUI()
+# Note the path to the result file
+```
+
+## Exploration then
+
+You could run the interactive exploration and analysis of the clustering and dimension 
+reduction results using the Shiny application.
+
+```{r eval=FALSE}
+# Launch the Shiny interface to view and annotate the analysis
+cytofkitShinyAPP()
+```
+
+If you know **exactly** the path to the results, you can run the Shiny application to explore a 
+given RData file that holds the results.
+
+```{r eval=FALSE}
+# Launch the Shiny interface using a defined path
+analysis_file = "c:/demo/200205-atelier/CLEAN_DATA_results/run_5k/run_5k.RData"
+if (file.exists(analysis_file))
+  cytofkitShinyAPP(analysis_file)
+```
+
+
+
+# Cytofast post-analysis
+
+
+This part concerns the cytofast analysis. This step needs to be run without graphical interface.
+You will have to understand the steps of the analysis, to read the R code in order to change some
+parts in order to define the group comparison that are relevant to your analysis.
+
+
+## Configuration 1: file location and clustering
+
+
+### FCS location
+
+Locate the directory (aka folder) where the FCS files of exported from cytofkit are. This 
+directory ends typically with "_analyzedFCS".
+
+Either using a GUI; select one of the exported FCS file.
+
+```{r, eval=FALSE}
+# use a GUI to locate the FCS files that were exported from the cytofkit analysis or exploration
+analysis_fcs_dir = dirname(chooseFiles_GUI())
+```
+
+Or by command lines; you need to know exactly where files are located.
+
+```{r}
+# Main directory of all results
+res_dir = "c:/demo/200205-atelier/CLEAN_DATA_results"
+# Append project name and the analyzed FCS dir
+analysis_fcs_dir = file.path(res_dir, "cytofkitlab_5k", "cytofkitlab_5k_analyzedFCS")
+stopifnot(dir.exists(analysis_fcs_dir))  # check dir exists
+```
+
+
+### Clustering to use
+
+The cytofkit exploration using the Shiny GUI may result in many clustering and manual grouping.
+In the following analysis you have to select one of them.
+
+```{r}
+# Select the clustering to use
+selected_clustering_method = "FlowSOM_clusterIDs"
+#selected_clustering_method = "Rphenograph_clusterIDs"
+```
+
+
+## Import the FCS files exported by cytofkit into cytofast
+
+
+```{r readCytofkit}
+# Load libraries
+library(cytofast)
+library(cytofkitlab)  # allow reading FCS for cytofast objects
+
+# Load cytofkit FCS files
+cfData = readCytofkitFCS(analysis_fcs_dir, clusterID = selected_clustering_method)
+# cfData = readCytofkitFCS("demo/cytofkit_demo_analyzedFCS", clusterID = "Rphenograph_clusterIDs")
+table(cfData@expr$clusterID)
+```
+
+Optionnally, do some channel cleaning and ordering
+
+```{r}
+# Remove unneeded channels
+keep <- colnames(cfData@expr)  # all
+keep <- keep[!grepl("^(Time|Event_length|Cell_length)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("^(Center|Offset|Width|Residual)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("^(Cisplatin)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("(_ADN1|_ADN2)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("(_DNA1|_DNA2)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("(_Bead)", keep, ignore.case = TRUE)]
+keep <- keep[!grepl("^(NA\\.)", keep, ignore.case = TRUE)]  # flowCore bug on DNA channel
+keep <- keep[!grepl("^X\\d+", keep) | grepl("_", keep)]  # unannotated X channel
+cfData@expr <- cfData@expr[, keep]
+keep
+
+# Rename channels
+colnames(cfData@expr) <- gsub("(^X\\d+.+?_)", "", keep)  # remove metal tag
+colnames(cfData@expr) <- gsub("(\\.\\d+.$)", "", colnames(cfData@expr))  # remove metal tag
+
+# Manual ordering of channels
+first <- c("CD20", "CD19", "CD3", "CD4", "CD8", "TCRgd", "CD56", "CD16", "CD45RA", "CD95", "CD127")
+setdiff(first, colnames(cfData@expr))  # not found in the FCS
+first <- intersect(first, colnames(cfData@expr))
+
+keep <- colnames(cfData@expr)  # all remaining
+# Here are the channels in the final order
+final_channels <- c(first, setdiff(keep[-(1:2)], first))
+final_channels
+
+# select and reorder channels
+cfData@expr <- cfData@expr[, c(keep[1:2], final_channels)]
+```
+
+
+## Configuration 2: Define meta data grouping FCS samples
+
+
+To compute statistical tests, we need to define groups. This grouping comes from extra data called 
+meta data. The user has two options to define this information. Then this meta-data is associated
+into the analysis workflow.
+
+```{r}
+# Here are the un-annotated samples
+cfData@samples
+```
+
+### Option 1: Create a template and fulfill it with Excel
+
+The user has to fill the annotation using an Excel template. The template consists in a first 
+column of sample identifiers and a second column called "status".
+
+```{r}
+meta <- data.frame(cfData@samples, status = "")
+# The template is written on disk
+if (!file.exists("meta.csv")) {
+  write.csv(meta, "meta.csv")
+} else {
+  message("meta.csv already exists and will not be over-written.")
+}
+```
+
+Now the user can annotate the template using Excel or so, and store it as CSV file keeping the
+original format (ie CSV).
+
+```{r}
+# Import annotation
+if (file.exists("meta.csv")) {
+  meta <- read.csv("meta.csv", row.names = 1)
+}
+```
+
+
+### Option 2: Create meta data using R commands
+
+Either we fill meta data programmatically.
+
+```{r}
+meta$status <- c(rep(c("D", "P"), each = 3))
+# write a copy to disk
+write.csv(meta, "meta.csv")
+```
+
+
+### Finally, associate annotations to data
+
+Once grouping has been defined, we associate it with the samples.
+
+```{r}
+# meta <- meta[match(row.names(cfData@samples), meta[,"sampleID"]),] # match sampleID
+cfData@samples <- cbind.data.frame(cfData@samples, meta[, -1, drop = FALSE])
+# remove duplicated columns
+cfData@samples <- cfData@samples[,!duplicated(colnames(cfData@samples)), drop = FALSE]
+# complete annotation
+cfData@samples
+```
+
+
+**NB1**: The annotation file could describes various sample grouping. Just use many columns. In the
+following we use the grouping defined in column "status", and select the group called "D" as
+reference.
+
+**NB2**: CSV file format is typically using "," as spearator, but in Europe, this separator has been
+replaced by ";". Instead of calling functions XXXX*.CSV*, use XXXX.*CSV_2_**
+
+
+
+
+## Process MFI and counts
+
+### Configuration 3: asinh cofactor
+
+Adjust the cofactor for asinh transform. Typically it's 5 for mass cytometry (the default). It
+should be set to 150 or 250 for flow cytometry.
+
+```{r}
+asinh_cofactor <- 5
+```
+
+
+### Transform the intensity
+
+Transform expression values, in the same way you display marker intensity
+
+```{r}
+# Transform expression with asinh( x / cofactor )
+cfData@expr[,-(1:2)] <- asinh(cfData@expr[,-(1:2)] / asinh_cofactor)
+```
+
+### Transform the cell counts
+
+Here the overview of raw cell counts.
+
+```{r}
+# Retrieve cell counts
+cfData <- cellCounts(cfData)
+head(cfData@counts)
+# View(cfData@counts)
+cytoHeatmaps(cfData, group="status", legend=TRUE)
+```
+
+Here we see high and low counts. But what is of interest is the relative change of cell count within
+each cluster. We don't need to compare the absolute cell counts between clusters. So cell counts
+need to be transformed.
+
+We transform counts with logarithm base 2 function and then centering within each cluster. The log2
+transform means that a fold increase of 2 is +1, and a fold decrease of 2 is -1. Such a 
+transformation compress the dynamic range and permits symmetric comparison among many of its
+properties. Then, because we are still not interested in the absolute values of the 
+log2(cell counts), we center them to their average.
+
+```{r}
+# Store raw counts
+cellCountRaw <- cfData@counts
+
+# Transform cell counts with log2( x + floor )
+cfData@counts <- log2(cfData@counts+10)  # 10 cell floor
+
+# Center to average
+cfData@counts <- sweep(cfData@counts, 2, colMeans(cfData@counts), "-")
+round(head(cfData@counts))
+```
+
+
+### Heatmap centered to overall average
+
+```{r}
+cytoHeatmaps(cfData, group="status", legend=TRUE)
+```
+
+Here we get a finer view of the data.
+
+
+## Differential analysis and visualization 
+
+Differential analysis is usually carried between 2 conditions, one of them being the reference.
+
+### Configuration 4: reference group
+
+Let's take status D as reference.
+
+```{r}
+# Define the reference group of the status column
+reference_status <- "D"
+```
+
+### Centering to the reference
+
+Here we consider that there is a reference group of samples. So this group is the reference for all
+variations that will be observed and analyzed. All the cell counts will be centered to its average 
+(remember we are now working with in logarithm space, log(P) - log(Ref) = log (P / Ref)). The values
+of the samples of the reference group are also centered. This allows capturing the dispersion 
+among the reference group, which is a good quality indicator.
+
+```{r}
+# Center to the reference group
+cfData@counts <- sweep(cfData@counts, 2, 
+                       colMeans(cfData@counts[cfData@samples$status == reference_status,]), "-")
+# View top 10 lines of the result
+round(head(cfData@counts)*10)
+```
+
+### Heatmap centered to the reference average
+
+```{r}
+# Heatmap
+cytoHeatmaps(cfData, group="status", legend=TRUE)
+```
+
+### Box plots
+
+```{r}
+# Detailed view of counts aka percentages
+cytoBoxplots(cfData, group = "status")
+```
+
+### Intensity distribution of functional markers
+
+You can view many markers of you experiments
+
+```{r, eval=FALSE}
+# List of markers
+
+# Detailed of functional markers
+msiPlot(cfData, markers = c("CD8", "CD4"), byGroup="status")
+```
+
+### Configuration 5: thresholds
+
+Define your thresholds to extract the meaningful clusters of cells you want to focus on. Here we
+compromise between p-value and fold change.
+
+```{r}
+# Thresholds for table and extract list of clusters
+# p-value scale, although presented in logarithmic scale on Volcano
+pvalue.cut <- 0.05
+# fold change, either increase or decrease
+# a value of 3 means a fold change of 3 ie 300% means that the value is multiplied or divided by 3
+# 3 means an increase of +200% or a deacrease of -66%
+logFold.cut <- log2(3)  # log fold change
+```
+
+
+### Add statistical information
+
+Carry out statistical computations and add fold changes information.
+
+* diff is the difference between log2(counts), so it is the log2 fold change.
+
+* fold is a multiplicative coefficient applied to the reference. It's the fold change, without the 
+log2 part. When fold is negative to stand for 1/fold.
+
+
+```{r}
+# Add t.test
+cfData <- cytottest(cfData, group = "status", adjustMethod = "fdr")
+# Construct the formula for adding fold change
+coln <- colnames(cfData@results)
+if (coln[2] == paste0("mean_", reference_status)) {
+  diff_expr <- paste0(coln[3], "-", coln[2])
+} else {
+  diff_expr <- paste0(coln[2], "-", coln[3])
+}
+# Add some columns
+cfData@results <- within(cfData@results, {
+  diff <- eval(parse(text = diff_expr))
+  fold <- sign(diff) * round(2^abs(diff), 2)
+  unselected <- abs(diff) < 0.5 | pvalue > 0.05
+  label <- clusters
+  label[unselected] <- NA
+  })
+# overview of the statistical table
+head(cfData@results)
+```
+
+### Volcano plot
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+set.seed(42)
+
+p <- ggplot(cfData@results, aes(diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(0.05, 1))) + geom_vline(xintercept = c(-0.5, 0 , 0.5)) + ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages")
+p + geom_text_repel(aes(label = label))
+
+```
+
+#### Volcano plot in alternate scale
+
+```{r}
+p <- ggplot(cfData@results, aes(2^diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(0.05, 1))) + geom_vline(xintercept = c(1/1.5, 1 , 1.5)) + ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages") + scale_x_continuous(trans = "log2")
+p + geom_text_repel(aes(label = label))
+```
+
+### Table of counts
+
+Here is the report of the clusters that pass the thresholds.
+
+```{r}
+library(knitr)
+kable(
+  cbind(cfData@results[with(cfData@results, !unselected),], t(
+    cellCountRaw[,with(cfData@results, !unselected)]))[,-c(1:3,6:7)]
+)
+```
+
+
+# cytofkit(lab) analysis (Via Commands in R Console)
+
+Learning R commands in the console (or writing a small script/notebook) is interesting when you need
+to tune the parameters of the analysis, or repeat the same analysis to different files. This
+requires to understand the file system and how to indicate the path to the files (FCS files
+or results).
+
+
+## Understanding the file system organization
+
+As you know, the files on your disk are organized in a **hierarchical structure** made of directories
+(also called folders). This organisation is very simple: a) a directory could contain directories
+and/or files, b) a file is an atomic piece that contain information but that could not contain any
+directory. The access to a file consists in specificying the path to it. The path could start at 
+the root of the hierarchical structure (such as "/" for Linux and Mac, "C:/" for Windows). In this
+case, it's called an **absolute path**. Of course, you could navigate through the hierarchical
+structure. Each time you enter a directory, the path is suffixed with a separator (typically "/") 
+and the name of the directory you entered in. This directory is called the **current directory**.
+From the current directory, it's possible to specify paths in a relative way. This means that the 
+relative root is the current directory. This allows specifying shorter paths to access to ressources
+in the neighborhood of the current directory. Paths become shorter because there is no need to
+repeat the absolute path from the root. This approach uses a **relative path** to specify 
+directories and files. A directory in the current directory (ie a sub directory) is
+simply specified by its names "sub_dir". The unique parent directory (or container) could be
+specified as "..". A brother directory (ie that has the same parent as the current directory) is
+specified by "../brother_dir". A file in it is specified as "../brother_dir/sample1.fcs".
+
+
+When you write a text document and store it, you only specify the absolute path to store it. When
+you process data files and generate results, you have to specify where the input data files are and
+where to store the results in the hierachical structure of the disk. Typically, the input files are
+already in a directory where you deposited them. For the results, you created a dedicated directory.
+So, you usually have to specify two directories. You could consider that one of those is your
+**working directory**. That operation transforms it as the relative root for accessing input files
+and storing results.
+
+Although this might sound simple or complex, there is another layer of complexity. When the amount
+of data increases, both absolute and relative paths are needed, because both systems have
+advantages. But problems appear when you move part of the data structure on which 
+the analysis depends. So, try to adopt a structure that will be sustainable in the long term.
+
+Find below some commands to navigate through the file system.
+
+```{r, eval=FALSE}
+# get the working directory.
+getwd()
+# set 
+setwd("C:/demo")
+```
+
+
+## cytofkit(lab) analysis (Via Commands in R Console)
+
+
+### Project definition
+
+The core analysis command of cytofkit requires the paths to the input files and the result directories. We organize the data and the results using those variable names. This is the sole configuration needed.
+
+```{r}
+fcs_dir = "c:/demo/200205-atelier/CLEAN_DATA"
+res_dir = "c:/demo/200205-atelier/CLEAN_DATA_results"
+marker_file = "ck_markers_main.txt"  # this file is searched in the input directory
+if (!dir.exists(res_dir)) dir.create(res_dir, recursive = TRUE)
+```
+
+It's usually difficult to navigate through the file system using R. An easier way is to use a
+graphical user interface for that task.
+
+```{r, eval=FALSE}
+# the following tcltk command will help you to locate your files in the file system
+# and select the markers; it writes the selected markers in a cytofkit_full.txt file
+storeMarkers_GUI()
+```
+
+
+### Script version for tuning parameters
+
+Here the main function of cytofkit. It exposes most of the parameters, but not all.
+
+```{r eval=FALSE, include=FALSE}
+# check the marker file
+if (!file.exists(file.path(fcs_dir, marker_file))) {
+  stop("Cannot find a file called \"", marker_file, "\"!")
+}
+# the calculation
+library(cytofkitlab)
+cytofkit(
+  fcsFiles = fcs_dir,  # directory of the input FCS files
+  markers = marker_file,  #
+  projectName = "run_5k", 
+  ifCompensation = FALSE, 
+  transformMethod = "arcsinh", 
+  mergeMethod = "fixed", 
+  fixedNum = 5000, 
+  dimReductionMethod = "tsne", 
+  clusterMethods =  c("FlowSOM", "Rphenograph"), 
+  visualizationMethods = c("pca", "tsne", "umap"), 
+  resultDir = file.path(res_dir, "run_5k"))
+```
+
+```{r, eval=FALSE}
+# the interactive exploration of results
+analysis_file = file.path(res_dir, "run_5k", "run_5k.RData")
+if (file.exists(analysis_file))
+  cytofkitShinyAPP(analysis_file)
+```
+
+
+### Useful FCS files commands
+
+
+If you want to get an insight of the FCS files, here are some commands to read FCS files and 
+retrieve information. This is useful to get the count of events per file and their channel names.
+
+```{r}
+library(flowCore)
+
+# read the FCS as a flowset, ie a group of compatible FCS
+fs = read.flowSet(path = fcs_dir, pattern = "*.fcs", transformation = FALSE, truncate_max_range = FALSE)
+
+# view the flowset
+fs
+
+# view annotations
+pData(fs)
+# here, none
+
+# view the cell counts
+fsApply(fs, nrow)
+
+# view a specific FCS
+ff = fs[[1]]  # extract 1st FCS as flowframe
+# view some keywords
+keyword(ff, "$CYT")  # cytometer
+keyword(ff, "$GUID")
+keyword(ff, "$FIL")  # file name
+keyword(ff, "$TOT")  # cell count
+keyword(ff, "$COM")  # comment
+# view all keywords
+kwd = keyword(ff)
+length(kwd)  # there are too many
+# filter out some keywords
+kwd_1 = kwd[!grepl("flowCore", names(kwd))]  # not flowcore
+kwd_2 = kwd_1[-grep("^\\$P", names(kwd_1))]  # not standard parameters
+#kwd_2  # display remaining keywords
+unlist(kwd_2)
+```
