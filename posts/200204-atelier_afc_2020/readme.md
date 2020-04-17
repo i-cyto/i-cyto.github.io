@@ -17,8 +17,14 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocMana
 BiocManager::install("flowCore")
 BiocManager::install("uwot")
 BiocManager::install("cytofast")
-BiocManager::install("remotes")
-BiocManager::install("i-cyto/cytofkitlab")
+
+# install devtools if not already done
+if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+# install Rphenograph if not already installed
+if (!requireNamespace("Rphenograph", quietly = TRUE))
+  devtools::install_github("i-cyto/Rphenograph")
+# install cytofkitlab
+devtools::install_github("i-cyto/cytofkitlab")
 ```
 
 ## Updates
