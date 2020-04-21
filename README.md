@@ -1,4 +1,4 @@
-A companion github repository for [http://impact-cyto.inserm.fr](http://impact-cyto.inserm.fr) and workshops supported by [Associtation Française de Cytométrie](http://afcytometrie.fr)
+A companion github repository for [http://impact-cyto.inserm.fr](http://impact-cyto.inserm.fr) and workshops supported by [Association Française de Cytométrie](http://afcytometrie.fr)
 
 All repositories are at [https://github.com/i-cyto](https://github.com/i-cyto)
 
