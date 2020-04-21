@@ -457,17 +457,60 @@ library(ggplot2)
 library(ggrepel)
 set.seed(42)
 
-p <- ggplot(cfData@results, aes(diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(pvalue.cut, 1))) + geom_vline(xintercept = c(-logFold.cut, 0 , logFold.cut)) + ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages")
+p <- ggplot(cfData@results, aes(diff, -log10(pvalue))) + geom_point() + 
+  geom_hline(yintercept = -log10(c(pvalue.cut, 1))) + 
+  geom_vline(xintercept = c(-logFold.cut, 0 , logFold.cut)) + 
+  ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages")
 p + geom_text_repel(aes(label = label))
-
 ```
 
 #### Volcano plot in alternate scale
 
 ```{r}
-p <- 0
-ggplot(cfData@results, aes(2^diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(pvalue.cut, 1))) + geom_vline(xintercept = 2^c(-logFold.cut, 0 , logFold.cut)) + ggtitle("Volcano Plot, Fold Change of percentages") + scale_x_continuous(trans = "log2", breaks = c(1/(9:2), 1:9), labels = c(sprintf("1/%d",(9:2)), sprintf("%d",1:9)), minor_breaks = NULL) + labs(x = "fold change")
+set.seed(10)
+fcBreaks <- c(1.3, 1.5, 2:9)
+p <- ggplot(cfData@results, aes(2^diff, -log10(pvalue))) + geom_point() +
+  geom_hline(yintercept = -log10(c(pvalue.cut, 1)),
+             lty = c(2, 1), col = c("green3", "grey60")) +
+  geom_vline(xintercept = 2^c(-logFold.cut, 0 , logFold.cut),
+             lty = c(2, 1, 2), col = c("blue", "grey60", "red")) +
+  ggtitle("Volcano Plot, Fold Change of percentages") + labs(x = "fold change") +
+  scale_x_continuous(trans = "log2", 
+                     breaks = c(1/rev(fcBreaks), 1, fcBreaks), 
+                     labels = c(sprintf("1/%g",rev(fcBreaks)), "1", sprintf("%g",fcBreaks)), 
+                     minor_breaks = NULL)
 p + geom_text_repel(aes(label = label))
+```
+
+### Report interesting clusters
+
+#### Select clusters of interest
+
+```{r}
+# remove unselected clusters
+clusterSelection <- with(cfData@results, !unselected)
+# duplicate and remove unselected clusters
+cfDataSelection <- cfData
+cfDataSelection@expr <- subset(cfDataSelection@expr, 
+                               clusterID %in% cfData@results$clusters[clusterSelection])
+cfDataSelection@counts <- cfDataSelection@counts[,clusterSelection]
+cfDataSelection@results <- cfDataSelection@results[clusterSelection,]
+```
+
+#### Box plots
+
+```{r}
+# Detailed view of log2 fold changes
+cytoBoxplots(cfDataSelection, group = "status") + labs(y = "log2(fold change)")
+```
+
+Using the same scale.
+
+```{r}
+# with the same scale across all boxplots
+cytoBoxplots(cfDataSelection, group = "status") +
+  labs(y = "log2(fold change)") + 
+  facet_wrap(~variable, scales = "fixed")
 ```
 
 ### Table of counts
@@ -477,8 +520,9 @@ Here is the report of the clusters that pass the thresholds.
 ```{r}
 library(knitr)
 kable(
-  cbind(cfData@results[with(cfData@results, !unselected),], t(
-    cellCountRaw[,with(cfData@results, !unselected)]))[,-c(1:3,6:7)]
+  cbind(cfData@results[clusterSelection,], t(
+    cellCountRaw[,clusterSelection]))[,-c(1:3,6:7)],
+  caption = "clusters that pass the thresholds"
 )
 ```
 
