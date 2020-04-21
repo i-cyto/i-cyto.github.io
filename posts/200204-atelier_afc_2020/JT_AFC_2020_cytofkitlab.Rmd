@@ -442,7 +442,7 @@ if (coln[2] == paste0("mean_", reference_status)) {
 cfData@results <- within(cfData@results, {
   diff <- eval(parse(text = diff_expr))
   fold <- sign(diff) * round(2^abs(diff), 2)
-  unselected <- abs(diff) < 0.5 | pvalue > 0.05
+  unselected <- abs(diff) < logFold.cut | pvalue > pvalue.cut
   label <- clusters
   label[unselected] <- NA
   })
@@ -457,7 +457,7 @@ library(ggplot2)
 library(ggrepel)
 set.seed(42)
 
-p <- ggplot(cfData@results, aes(diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(0.05, 1))) + geom_vline(xintercept = c(-0.5, 0 , 0.5)) + ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages")
+p <- ggplot(cfData@results, aes(diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(pvalue.cut, 1))) + geom_vline(xintercept = c(-logFold.cut, 0 , logFold.cut)) + ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages")
 p + geom_text_repel(aes(label = label))
 
 ```
@@ -465,7 +465,8 @@ p + geom_text_repel(aes(label = label))
 #### Volcano plot in alternate scale
 
 ```{r}
-p <- ggplot(cfData@results, aes(2^diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(0.05, 1))) + geom_vline(xintercept = c(1/1.5, 1 , 1.5)) + ggtitle("Volcano Plot, diff = Log2 Fold Change of percentages") + scale_x_continuous(trans = "log2")
+p <- 0
+ggplot(cfData@results, aes(2^diff, -log10(pvalue))) + geom_point() + geom_hline(yintercept = -log10(c(pvalue.cut, 1))) + geom_vline(xintercept = 2^c(-logFold.cut, 0 , logFold.cut)) + ggtitle("Volcano Plot, Fold Change of percentages") + scale_x_continuous(trans = "log2", breaks = c(1/(9:2), 1:9), labels = c(sprintf("1/%d",(9:2)), sprintf("%d",1:9)), minor_breaks = NULL) + labs(x = "fold change")
 p + geom_text_repel(aes(label = label))
 ```
 
