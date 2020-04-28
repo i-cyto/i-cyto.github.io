@@ -1,0 +1,290 @@
+---
+title: "Quantile normalization"
+author: "S. Granjeaud"
+date: "27/04/2020"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    fig_width: 9
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## The problem
+
+
+There is a need to render the batches of experiments more comparable in order to compile many 
+experiments and to gain/maintain statistical power. As there are always unattended sources of
+variation, normalization between batches is needed. There are different ways to normalize batches. Two recent papers by [Van Gassen S et al.](https://www.ncbi.nlm.nih.gov/pubmed/31633883) and [Schuyler RP et al.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6803429/) address this issue. Here I examine more closely the use of quantile that has been proposed in these two articles.
+
+In the following, batch 1 will be considered as the reference and batch 2 as any batch to be
+normalized. We consider only the sample that is common to all batches and which serves as the reference.
+Any scalings that are deducted to make it similar to the reference batch are applied to the other
+samples of the batch being analysed. Moreover, we will consider only one of the many markers of the panel.
+
+Here we are will simulate marker instensity distributions (also viewed as histograms) and
+study the normalizations using quantile. Without loss of generality, but in order to focuss on
+normalization, we will work with flow cytometry data, i.e. with a distribution made of negative
+and positve Gaussian peaks. We will work on transformed intensity.
+
+There are two ways of using quantiles in a normalization process. In the first approach, we use all 
+quantiles along the range of intensity. In the second approach, we use only one quantile.
+
+
+## The simulated data
+
+We will model a marker with a negative and positive peaks. Its distribution will vary slightly
+between the first and the second batch.
+
+
+### Batch 1
+
+Let's imagine a marker with the following distribution in the 1st batch. The intensity is 
+observed after the transformation of your choice, mainly logicle for flow, asinh for mass. What
+matters is the global shapes resulting from the position of the peaks and their dispersion.
+
+```{r}
+# BATCH 1
+n_total = 25000  # total of cells
+n_neg = round(n_total * 0.8)  # amount of cells in the negative peak
+n_pos = n_total - n_neg  # remaining cells to the positive peak
+m_neg = 0  # average position of the negative peak (after logicle, asinh...)
+m_pos = 5  # average position of the positive peak (after logicle, asinh...)
+sd_pk = 1.0  # dispersion of intensity around each peak (after logicle, asinh...)
+```
+
+Let's generate cells intensity.
+
+```{r}
+z = c(rnorm(n_neg, mean = m_neg, sd = sd_pk),
+      rnorm(n_pos, mean = m_pos, sd = sd_pk))
+plot(density(z), main = "Batch 1", col = "red2")
+abline(v = c(m_neg, m_pos), col = c("grey80", "red2"))
+```
+
+Let's look at the quantile curve.
+
+```{r}
+probs = seq(0,1, length.out = 101)
+z_q = quantile(z, probs = probs)
+plot(z_q, probs * 100, xlab = "transformed intensity", ylab = "quantiles", col = "red2", 
+     main = "Batch 1, reference")
+abline(v = c(m_neg, m_pos), col = c("grey80", "red2"))
+```
+
+### Batch 2
+
+Let's imagine a few changes in the intensity distribution.
+
+Let's say the intensity of batch 2 is scaled and greater than 1. The positive peak is now positioned 
+at a higher intensity than in the batch 1 (further to the right of the graphics). This is the 
+effect we want to correct in order to realign the positive peak in batch 2 to its position in batch 1.
+
+Let's say the cell ratio is slightly different, although both samples are aliquots of the 
+same initial sample. This is point that will pose a problem in the normalization. If you
+ignore such a variability, normalization will perform well.
+
+```{r}
+# BATCH 2, slight difference of ratio, pos is scaled by scl2
+scl2 = 1.2  # scaling
+n_neg2 = round(n_total * 0.77)  # new ratio
+n_pos2 = n_total - n_neg2
+```
+
+Let's generate cells intensity.
+
+```{r}
+m_pos2 = m_pos * scl2
+z_2 = c(rnorm(n_neg2, mean = m_neg, sd = sd_pk),
+             rnorm(n_pos2, mean = m_pos, sd = sd_pk)) * scl2
+plot(density(z), col = "red2", lwd = 2)
+lines(density(z_2), col = "blue", lwd = 2)
+legend("topright", c("batch 1", "batch 2"), col = c("red2", "blue"), lty = 1, lwd = 3)
+abline(v = c(m_neg, m_pos, m_pos2), col = c("grey80", "red2", "blue"))
+arrows(m_pos2, 0.15, m_pos, 0.15, lwd = 3, length = 0.15)
+```
+
+Let's look at the quantile curve.
+
+```{r}
+z_q2 = quantile(z_2, probs = probs)
+plot(z_q, probs * 100, xlab = "transformed intensity", ylab = "quantiles", col = "red2")
+abline(v = c(m_neg, m_pos, m_pos2), col = c("grey80", "red2", "blue"))
+points(z_q2, probs * 100, col = "blue", pch = 19)
+legend("bottomright", c("batch 1", "batch 2"), col = c("red2", "blue"), lty = 1, lwd = 3)
+arrows(m_pos2, 90, m_pos, 90, lwd = 3, length = 0.15)
+```
+
+
+## normalizations
+
+Now we have set the intensities. Let's see how normalization could be addressed.
+
+
+
+## Quantile normalization, Full Range
+
+
+### How does it work?
+
+This normalization aims to make the two distribution exactly the same. This could be viewed as
+ranking intensities of batch 2 and assigning the intensity observed at the same rank in batch 1.
+Because the number of cells between batches is not the same, it is more flexible to use the quantile (or
+percentile). Quantiles can always be calculated. Regardless of the number of cells in the sample, we can 
+compute the intensity so that there is 1% of cells below this value (and 99% above). The 
+same is possible for each quantile, from 0% (i.e. the minimun) up to 100% (i.e. the maximum). Therefore,
+normalization is carried out by assigning to each quantile of batch 2 the intensity
+observed in batch 1 for the same quantile. The intensities between two quantiles are interpolated using 
+a spline curve, which is a refined interpolation of a linear interpolation.
+
+
+The main question is: what does this quantile-quantile transformation looks like? Let' s see the
+quantile-quantile plot. Each point is quantile (0%..100%) and we reperesent its value in the first 
+and second batches.
+
+```{r, fig.asp=1}
+plot(z_q, z_q2, main = "qqplot", asp = 1, xlab = "quantile, batch 1", ylab = "quantile, batch 2")
+abline(c(0,scl2), lty = 2, col = "blue")
+# pos is scaled compared to ref
+# segments(-99, m_pos2, m_pos, m_pos2)
+# segments(5, -99, m_pos, m_pos2)
+# the quantile normalization replaces the intensity observed in batch 2 by the intensity of the
+# same quantile
+idx = which.min(abs(z_q2 - 6))
+arrows(-99, z_q2[idx], z_q[idx], z_q2[idx], lwd = 3, length = 0.15)
+arrows(z_q[idx], z_q2[idx], z_q[idx], z_q2[1], lwd = 3, length = 0.15)
+# interpolation a spline
+lines(spline(z_q, z_q2, method = "natural", n = 100))
+```
+
+The dotted blue line shows the `r scl2` slope. The black segments draw the path of normalization
+applied to the center of the positive peak observed in batch 2.
+
+The interpolation between quantiles is obtained with a spline, a smooth curve line passing through all
+the quantile points. This curve converts any intensity of batch 2 into an intensity
+of batch 1 for the specified marker.
+
+### Where does it go wrong?
+
+As you already noticed, there is a bump on the curve located between the location of the 
+two peaks. It results from the fact there is not **exactly** the same ratio of positive / negative
+cells in both batches. Quantile points in the bump range correspond to cells that belong to one peak but that are assigned
+to the other peak to respect the targeted cell ratio between peaks of batch 1. In this region, the
+scaling is different from the global scaling. Therefore, intensity is scaled differentially depending on
+its value.
+
+```{r, fig.asp=1}
+plot(z_q, z_q2, main = "qqplot", asp = 1, xlab = "quantile, batch 1", ylab = "quantile, batch 2")
+abline(c(0,scl2), lty = 2, col = "blue")
+# Find the nearest quantile in the middle of the peaks of batch 2
+# idx = which.min(abs(z_q2 - (m_pos2 + m_neg)/2))
+# Find the exact transformed value of the middle of the peaks of batch 2
+z_2_midd = (m_pos2 + m_neg)/2
+z_2_norm = spline(z_q2, z_q, xout = z_2_midd)$y
+arrows(-99, z_2_midd, z_2_norm, z_2_midd, lwd = 3, length = 0.15, col = "blue")
+arrows(z_2_norm, z_2_midd, z_2_norm, z_q2[1], lwd = 3, length = 0.15, col = "blue")
+abline(v = z_2_midd, lwd = 3, col = "red2")
+norm_coef = z_2_norm / z_2_midd
+# show the middle
+abline(h = (m_pos2 + m_neg)/2, col = "blue", lty = 2)
+```
+
+`r sprintf("Normalization considers the middle intensity between peaks in batch 2 was scaled by %.3f instead of %.3f", 1/norm_coef, scl2)`. The middle is nearer to the negative peak after normalization.
+
+
+### Discussion
+
+This problem has been reported by [Schuyler RP et al.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6803429/). The [figure 4B](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6803429/figure/F4/) shows is an example.
+
+I bring here a better understanding of why this normalization might turn out to be odd. Unless you inspect
+the quantile plots that are available in cytNorm, or you do a bi-parametric plot, you can not 
+suspect that the normalization is either good or bad. The density plot of the marker being 
+normalized will have the right shape, the one of the reference.
+
+It is interesting to note that quantile normalization has been widely used in micro-array analysis since 2003 ([Bolstad BM
+et al.](https://www.ncbi.nlm.nih.gov/pubmed/12538238)). It performs well. What is the
+difference? The main difference lies in the fact that there is only **one peak** in the distribution
+of the intensities of micro-arrays. Thus, the fact that the scaling is different along the range of
+intensity is expected, small and soft. This is based on my experience.
+
+
+It is therefore possible that this full-range quantile normalization performs well for markers with
+a single negative peak with a long tail in place of the positive peak. It might be difficult to
+address this question, as no reference is available to monitor the behaviour of normalization in
+such a case.
+
+
+### What alternatives?
+
+What we were expecting is a uniform scaling across the whole range of intensity. This is the final
+proposal of Schuyler et al. Such a solution is also available in cytoNorm, but it is not the method
+that has been promoted in the article. So how to carry it out?
+
+
+## Linear Scaling using a quantile
+
+The cytofBatchAdjust code of Schuyler et al. proposes to use a single quantile to define the scaling
+across the intensity range. By definition (CyTOF), the scaling originates at zero. We could select
+any quantile that is high enough and quite not sensitive to sampling or ratio variations. The
+maximum is not robust enough. But any quantile away from extrema by a hundred of cells should do the
+trick.
+
+What is the point, really? It's to robustly identify by its quantile an objective and reliable point
+on the positive peak whose relative position to the top of the positive peak is the same in all
+batches. As such, this point could be used to compute the scaling for each of the batches.
+
+In the figure below, the 99th quantile is colored in blue and quantiles 85, 90, 95 in green. In this
+simulation the top of the positive peak correspond to the 90th quantile, but quantile from 85 to 99
+allow computing correctly the scaling factor. They lie all near the scaling line.
+
+```{r, fig.asp=1}
+plot(z_q, z_q2, main = "qqplot", asp = 1, xlab = "quantile, batch 1", ylab = "quantile, batch 2")
+abline(c(0,scl2), lty = 2, col = "blue")
+
+# extrema are not reliable
+extrema = c(1, length(probs))
+points(z_q[extrema], z_q2[extrema], pch = "X", cex = 1.5, col = "red3")
+
+# Use one quantile at high end, e.g. 99th
+points(z_q[99+1], z_q2[99+1], pch = "*", cex = 3, col = "dodgerblue")  # quantile 0 is at [1]
+abline(c(0, z_q2[99+1]/z_q[99+1]), lty = 2, col = "dodgerblue")  # quantile 0 is at [1]
+
+# Use other quantiles at high end
+points(z_q[c(85, 90, 95)+1], z_q2[c(85, 90, 95)+1], pch = "*", cex = 3, col = "green3")  # quantile 0 is at [1]
+for (i in c(85, 90, 95))
+  abline(c(0, z_q2[i+1]/z_q[i+1]), lty = 2, col = "green2")  # quantile 0 is at [1]
+```
+
+In the cytoNorm code of Van Gassen et al., many objectives could be defined: the mean, a selection of
+quantiles... The choice is quite rich. Look at the functions [quantileValues](https://github.com/saeyslab/CytoNorm/blob/e94732cec4ce26c44d167c530978b2c5b296e55c/R/QuantileNorm.R#L12-L15) of the getQuantiles function and
+the [example nQ_2](https://github.com/saeyslab/CytoNorm/blob/e94732cec4ce26c44d167c530978b2c5b296e55c/R/QuantileNorm.R#L219) of the QuantileNorm.train function. This example could be adapted to add more quantiles at the high end if needed. Keep a low end quantile to anchor the quantile in the case of CyTOF data.
+
+
+## Conclusions
+
+We have new methods to correct batch effect. They are based on the use of quantile. While the primary aim is 
+that the intensity distribution of markers of the reference sample are similar from batch to batch, the transformation of intensity must be kept linear or nearly. It's easy with these two packages by use of one quantile. They offer also a more complex transformation, i.e. full range quantile normalisation, that should be monitored carefully in order to avoid distorsions. cytoNorm offers an additional level of refinement that groups cells using FlowSOM before calculating the scaling, which is out of the scope of my point.
+
+The previous solutions are based on peak detection and realignment [Finak et al.](https://www.ncbi.nlm.nih.gov/pubmed/24382714). These solutions clearly identify peaks (to be exact, lack of peak is admitted) and don't care about variations at the high end tail. Selecting a quantile aims at identifying a specific position relatively to the distribution. The distribution is considered nearly identical from batch to batch, and the variations in the high end tail must not impact the quantile position.
+
+The choice of a quantile depends on the cells composition and their expression for each marker; there is probably no one good choice whatever the marker is.
+
+
+## Final Words
+
+I tested those two approach on the data made available by Mike Leipold [FR-FCM-Z2YR](flowrepository.org/id/FR-FCM-Z2YR). I would like to thank him for such an initiative.
+
+I have adapted cytofBatchAdjust to run on Windows. It is available at https://github.com/i-cyto/CytofBatchAdjust. Ron Schuyler has not checked the changes yet.
+
+I thank my colleague Olivier who initiated this analysis, tested and applied cytofBatchAdjust to an experiment of more than twenty batches.
+
+
+## Versions
+
+Version 1.0 2020-04-27 Initial post.
+
+
