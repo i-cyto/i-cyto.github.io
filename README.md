@@ -4,6 +4,9 @@ All repositories are at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 ## News
 
+**2022-05-24 [Analysis cytofkit*lab*-cytofast](posts/200204-atelier_afc_2020)**
+  - updated analysis workflow using cytofkit**lab** [2022_cytofkitlab.zip](posts/220524-atelier_inserm_2022/220524-cytofast_analysis_stuff.zip)
+
 **2020-04-27 [Quantile normalisation](posts/200427-quantile_norm)**
   - analysis and explanation of the quantile normalisation
   - CytofBatchAdjust is [available for Windows](https://github.com/i-cyto/CytofBatchAdjust)
