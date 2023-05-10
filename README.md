@@ -4,6 +4,9 @@ All repositories are at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 ## News
 
+**2023-05-10 [Webinar AFC Heatmap](posts/230510-webinar_afc_heatmap)**
+  - Heatmap of MFI
+
 **2022-05-24 [Analysis cytofkit*lab*-cytofast](posts/200204-atelier_afc_2020)**
   - updated analysis workflow using cytofkit**lab** [2022_cytofkitlab.zip](posts/220524-atelier_inserm_2022/220524-cytofast_analysis_stuff.zip)
 
