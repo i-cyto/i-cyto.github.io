@@ -4,6 +4,9 @@ All repositories are at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 ## News
 
+**2023-06-12 [Inserm workshop Passeport Cytométrie](posts/230612-atelier_inserm_2023)**
+  - Atelier Inserm 2023
+
 **2023-05-10 [Webinar AFC Heatmap](posts/230510-webinar_afc_heatmap)**
   - Heatmap of MFI
 
