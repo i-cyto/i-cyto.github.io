@@ -1,7 +1,7 @@
-Webinar AFC Heatmap
-===================
+Inserm workshop Passeport Cytométrie
+====================================
 
-## Data files
+## Build a heatmap of percentages
 
 Extract abundance, MFI and metadata tables from OMIQ
 
@@ -9,7 +9,15 @@ Extract abundance, MFI and metadata tables from OMIQ
 
 Excel data files
 
-  - extracted [abundance per cluster](mfis_cxm.xlsx)
+  - extracted [abundance per cluster](BOOTCAMP_abundance.csv)
+  - processed [abundance per cluster](BOOTCAMP_abundance.xlsx)
+
+
+## Cytofkitlab
+
+  - download and extract the [Archive](220524-cytofast_analysis_stuff.zip)
+  - view the [slides](221019-cytofkit_cytofast.pdf)
+
 
 
 ## Updates
