@@ -7,7 +7,7 @@ All repositories are at [https://github.com/i-cyto](https://github.com/i-cyto)
 **2023-07-07 [JT AFC Heatmap & Stats](posts/2300707-jt_afc)**
   - Heatmap and Statistics
 
-**2023-05-10 [Webinar AFC Heatmap](posts/230629-webinar_afc_heatmap)**
+**2023-06-29 [Webinar AFC Heatmap](posts/230629-webinar_afc_heatmap)**
   - Heatmap of abundance
 
 **2023-06-12 [Inserm workshop Passeport Cytométrie](posts/230612-atelier_inserm_2023)**
