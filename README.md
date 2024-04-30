@@ -7,7 +7,7 @@ All repositories are at [https://github.com/i-cyto](https://github.com/i-cyto)
 **2024-05-07 [analycyte](posts/240507-analycyte)**
   - analycyte presentation @ CYTO2024
 
-**2023-07-07 [JT AFC Heatmap & Stats](posts/2300707-jt_afc)**
+**2023-07-07 [JT AFC Heatmap & Stats](posts/230707-jt_afc)**
   - Heatmap and Statistics
 
 **2023-06-29 [Webinar AFC Heatmap](posts/230629-webinar_afc_heatmap)**
