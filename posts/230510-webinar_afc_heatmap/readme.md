@@ -1,6 +1,10 @@
 Webinar AFC Heatmap
 ===================
 
+## Presentation
+
+  - [How to represent MFI with heatmap](230510-afc_heatmap_mfi.pdf)
+
 ## Data files
 
 Excel data files

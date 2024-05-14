@@ -1,6 +1,10 @@
 Webinar AFC Heatmap
 ===================
 
+## Presentation
+
+  - [How to represent abundances with heatmap](230629-afc_heatmap_abund.pdf)
+
 ## Data files
 
 Excel data files
