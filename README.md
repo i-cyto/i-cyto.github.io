@@ -4,6 +4,9 @@ All repositories are at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 ## News
 
+**2024-11-19 [analycyte workshop](posts/241119-Analycyte_Toulouse)**
+  - analycyte workshop @ Toulouse
+
 **2024-05-07 [analycyte](posts/240507-analycyte)**
   - analycyte presentation @ CYTO2024
 
