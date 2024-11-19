@@ -14,9 +14,9 @@ Toute analyse est incomplète sans une analyse exploratoire qui contrôle la qua
 
 ## Software
 
-A Docker image is available on [DockerHub](https://hub.docker.com/r/eugloh/analycyte_base). French academics could launch it on the Cloud of the Institut Français de Bioinformatique ([howto](https://eugloh.quarto.pub/analycyte/qmd/a4-sec_mod_deploy_ifb.html)).
+Nous utilisons le cloud de l'Insitut Français de Bioinformatique ([RainBio IFB](https://biosphere.france-bioinformatique.fr/catalogue/)) pour créer un serveur virtuel proposant analycyte. Analycyte est une application Shiny d'analyse post-clustering. La procédure de déploiement est disponible [ici](https://eugloh.quarto.pub/analycyte/qmd/a4-sec_mod_deploy_ifb.html).
 
-L'aide est disponible sur [quarto.pub](https://eugloh.quarto.pub/analycyte/).
+L'aide complète d'analycyte est disponible sur [quarto.pub](https://i-cyto.quarto.pub/analycyte-fr/).
 
 
 ## Datasets
