@@ -3,7 +3,7 @@ Atelier Inserm 291
 
 ##  Atelier 291 - Analyse des Données Multiparamétriques de Cytométrie : en chemin vers le haut-contenu
 
-Date limite d'inscription : 03/07/2026
+Date limite d'inscription : 2026-07-03
 Organisateurs : 
 
   - Antonio COSMA (Luxembourg Institute of Health, Esch-sur-Alzette)
