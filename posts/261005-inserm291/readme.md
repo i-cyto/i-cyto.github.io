@@ -16,7 +16,7 @@ Phase II - Pratique : 16-18 novembre 2026 à Luxembourg, Lille, Marseille
 ## Presentation S. Granjeaud
 
   - [Download Presentation](261007-Inserm291_granjeaud.pdf)
-  - [Download Abstract (en|fr)](261007-Inserm291_granjeaud_abstract.pdf)
+  - [Download Abstract (en,fr)](261007-Inserm291_granjeaud_abstract.pdf)
 
 
 ## Updates
