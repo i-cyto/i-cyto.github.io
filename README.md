@@ -4,6 +4,9 @@ All repositories are at [https://github.com/i-cyto](https://github.com/i-cyto)
 
 ## News
 
+**2026-10-05 [Inserm Workshop 291](posts/261005-inserm291)**
+  - Machine Learning & Data Preparation, presentation @ [Inserm Workshop 291](https://ateliersinserm.dakini-pco.com/en/workshop.291.multiparametric.cytometry.data.analysis.stairway.to.high.content-66-51.php)
+
 **2024-05-07 [analycyte](posts/240507-analycyte)**
   - analycyte presentation @ CYTO2024
 
