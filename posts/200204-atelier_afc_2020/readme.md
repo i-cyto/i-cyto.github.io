@@ -3,7 +3,7 @@ Atelier AFC 2020
 
 The commands are glued in a R Markdown [script](JT_AFC_2020_cytofkitlab.Rmd). We propose a [RECAP](200207-JTAFC_Pipeline_Recap.pdf) of the classical pipelines. To redo the R session, please follow the [PRESENTATION](200207-JTAFC_Cytofkit_Cytofast_Analysis.pdf).
 
-You can simplify the selecion of markers by using a [text file](ck_markers_main.txt) of the markers to analyze. Just type this file name into the marker selection field.
+You can simplify the selection of markers by using a [text file](ck_markers_main.txt) of the markers to analyze. Just type this file name into the marker selection field.
 
 Then it's possible to continue the analysis with cytofast. Here is the [html](JT_AFC_2020_cytofkitlab.html) resulting from the data exported from cytofkit. You need to define sample groups in a [meta.csv file](meta.csv). Then you get nice heatmaps, compute t-test of percentages and Volcano plots.
 

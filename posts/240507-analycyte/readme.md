@@ -5,7 +5,7 @@ analycyte
 
 ### Chikungunya Virus dataset
 
-Data originate from [Michlmayr et al., 2018](https://pubmed.ncbi.nlm.nih.gov/30150281/) and are available at FlowRepository.
+Data originate from [Michlmayr et al., 2018](https://pubmed.ncbi.nlm.nih.gov/30150281/) and are available at FlowRepository under [FR-FCM-Z238(https://flowrepository.org/id/FR-FCM-Z238).
 
   - [Quality Control report](chkv_qc.html)
   - [Differential Abundance report](chkv_da.html)
