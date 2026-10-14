@@ -13,10 +13,10 @@ Organisateurs :
 Phase I - Théorique : 5-7 octobre 2026 à l'Hôtel Mercure Montpellier Comédie 4*
 Phase II - Pratique : 16-18 novembre 2026 à Luxembourg, Lille, Marseille
 
-## Présenation S. Granjeaud
+## Presentation S. Granjeaud
 
-[Download](261007-Inserm291_granjeaud.pdf)
-
+  - [Download Presentation](261007-Inserm291_granjeaud.pdf)
+  - [Download Abstract (en|fr)](261007-Inserm291_granjeaud_abstract.pdf)
 
 
 ## Updates
